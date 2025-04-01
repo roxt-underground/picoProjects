@@ -8,7 +8,7 @@ logger = logging.getLogger()
 class Convert:
 
     typing = 'uint8_t'
-    
+
     def __init__(self, image_path, header_path):
         self.image_path = image_path
         self.header_path = header_path
@@ -32,7 +32,7 @@ class Convert:
         arr_size_name = f'{self.base_var_name.upper()}_SIZE'
         self.print(f'#define {arr_size_name} {self.img_h * self.img_w * 2}')
 
-        self.print('\n\n')
+        self.print('\n')
         self.print(f'{self.typing} {self.base_var_name}_array[{arr_size_name}] = {{')
 
         for i in range(self.img_h):
@@ -43,7 +43,7 @@ class Convert:
     def image_row_to_str(self, row_num):
         result = []
         for i in range(self.img_w):
-            pix = self.std_to_565(self.img.getpixel((row_num, i)))
+            pix = self.std_to_565(self.img.getpixel((i, row_num)))
             result.append(self.pix2uint8(pix))
         return ','.join(result)
 
@@ -77,4 +77,3 @@ class Convert:
 if __name__ == "__main__":
     convert = Convert(sys.argv[1], sys.argv[2])
     convert.run()
-    

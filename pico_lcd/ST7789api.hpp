@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 
@@ -39,4 +40,31 @@ class ST7789disp {
         void prepareWrite();
         void fill(uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey, uint16_t color);
 };
+
+class FontApi {
+    private:
+        uint16_t font_height;
+        uint16_t font_width;
+        std::unordered_map<unsigned char, uint32_t> table ;
+        const unsigned char base_alfabet[74] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z','0','1','2','3','4','5','6','7','8','9','+','-','.',',','=',':',';'};
+        uint8_t * _array_of_pixels;
+    protected:
+        uint16_t cursor[2];
+        uint32_t char_size;
+    public:
+        FontApi(
+            uint16_t font_height,
+            uint16_t font_weght,
+            uint8_t * array_of_pixels
+        );
+        uint8_t * getSimbolImage(unsigned char ch);
+        uint32_t getCharSize() { return char_size; }
+        void setCursor(uint16_t x, uint16_t y) {cursor[0] = x; cursor[1] = y;};
+        void writeChar(
+            ST7789disp * display, 
+            unsigned char ch
+        );
+        void writeBuff(ST7789disp * display, unsigned char * buff, uint16_t len);
+};
+
 #endif

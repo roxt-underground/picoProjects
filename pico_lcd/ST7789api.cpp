@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <unordered_map>
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/spi.h"
@@ -150,7 +151,7 @@ void ST7789disp::putColorBuff(uint16_t * color, uint32_t len) {
     free(buff);
 }
 
-void ST7789disp::writeData(uint8_t * data, uint len) {
+void ST7789disp::writeData(uint8_t * data, uint len){
     gpio_put(cs_pin, 0);
     gpio_put(dc_pin, 1);
     sleep_us(1);
@@ -186,4 +187,52 @@ uint8_t * convert16to8(uint16_t *buff, uint16_t len){
     }
     return data;
     free(buff);
+}
+
+FontApi::FontApi(
+    uint16_t _font_height,
+    uint16_t _font_width,
+    uint8_t * array_of_pixels
+){
+    uint16_t i;
+
+    font_width = _font_width;
+    font_height = _font_height;
+    char_size = _font_height * _font_width * 2;
+    _array_of_pixels = array_of_pixels;
+
+    for (i=0; i < sizeof(base_alfabet); i++) {
+        table[base_alfabet[i]] = char_size * i;
+    }
+}
+
+uint8_t * FontApi::getSimbolImage(unsigned char ch) {
+    return &_array_of_pixels[table[ch]];
+}
+
+void FontApi::writeChar(
+    ST7789disp * display, 
+    unsigned char ch
+){
+    display->setAddress(
+        cursor[0],
+        cursor[0] + font_width - 1,
+        cursor[1],
+        cursor[1] + font_height - 1
+    );
+    display->prepareWrite();
+    display->writeData(getSimbolImage(ch), char_size);
+    cursor[0] += font_width;
+}
+
+void FontApi::writeBuff(
+    ST7789disp * display,
+    unsigned char * buff, 
+    uint16_t len
+) {
+    uint16_t i;
+    for (i=0; i< len; i++) {
+        if (buff[i] == 0) return; // end of string
+        writeChar(display, buff[i]);
+    }
 }

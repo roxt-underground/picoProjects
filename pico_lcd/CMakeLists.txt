@@ -54,6 +54,7 @@ target_precompile_headers(st7789api
 )
 target_link_libraries(st7789api
     pico_stdlib
+    pico_rand
     hardware_spi
 )
 

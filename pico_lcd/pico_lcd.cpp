@@ -1,14 +1,13 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "pico/binary_info.h"
 #include "ST7789_const.h"
 #include "ST7789api.hpp"
+#include "pico/rand.h"
 
 #include "logo.hpp"
-
-// #include "ST7789.hpp"
+#include "font.hpp"
 
 // SPI Defines
 // We are going to use SPI 0, and allocate it to the following GPIO pins
@@ -34,6 +33,16 @@
 #define x_offset 34
 #define y_offset 0
 
+void draw_logo(ST7789disp * display, uint16_t x, uint16_t y) {
+    display->setAddress(
+        x,
+        x + __YAMAHA96_WIDTH + -1,
+        y, 
+        y +  __YAMAHA96_HEIGHT + -1
+    );
+    display->prepareWrite();
+    display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
+}
 
 int main()
 {
@@ -61,6 +70,12 @@ int main()
     display->intit();
     display->setOffsetX(x_offset);
     display->setOffsetY(y_offset);
+
+    FontApi * font = new FontApi(
+        __CONTHRAX_SB_HEIGHT,
+        __CONTHRAX_SB_WIDTH,
+        __conthrax_sb_array
+    );
     // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
 
     uint16_t i;
@@ -68,37 +83,32 @@ int main()
     sleep_ms(3000);
 
     uint16_t x ,y, color=0x0000;
+    unsigned char buff[32];
 
     while (true) {
 
         display->fill(0, LCD_W, 0, LCD_H, 0x0000);
-        for (i=0; i < 128; i++) {
-            x = rand() % (LCD_W - 5);//__YAMAHA96_WIDTH);
-            y = rand() % (LCD_H - 5);//__YAMAHA96_HEIGHT);
-            color = rand() % 0xFFFF;
+        x = get_rand_32() % (LCD_W - __YAMAHA96_HEIGHT);
+        y = get_rand_32() % (LCD_H - __YAMAHA96_WIDTH);
 
+        draw_logo(display, x, y);
+
+        sprintf((char *)buff, "X=%d", x);
+        font->setCursor(10, 10);
+        font->writeBuff(display, buff, 32);
+
+        sprintf((char *)buff, "Y=%d", y);
+        font->setCursor(10, 30);
+        font->writeBuff(display, buff, 32);
+
+        for (i=0; i < 128; i++) {
+            x = get_rand_32() % (LCD_W - __CONTHRAX_SB_WIDTH);//__YAMAHA96_WIDTH);
+            y = get_rand_32() % (LCD_H - __CONTHRAX_SB_HEIGHT);//__YAMAHA96_HEIGHT);
+            color = get_rand_32() % 0xFFFF;
             display->fill(x, x+5, y, y+5, color);
-            // display->setAddress(
-            //     x + _x,
-            //     x + __YAMAHA96_WIDTH + _x -1,
-            //     y + _y, 
-            //     y +  __YAMAHA96_HEIGHT + _y -1
-            // );
-            // display->prepareWrite();
-            // display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
+            display->setAddress(x, x+__CONTHRAX_SB_WIDTH-1, y, y+__CONTHRAX_SB_HEIGHT-1);
             sleep_ms(10);
         }
-        x = rand() % (LCD_W - __YAMAHA96_WIDTH);
-        y = rand() % (LCD_H - __YAMAHA96_HEIGHT);
-        display->setAddress(
-            x,
-            x + __YAMAHA96_WIDTH + -1,
-            y, 
-            y +  __YAMAHA96_HEIGHT + -1
-        );
-        display->prepareWrite();
-        display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
-
         sleep_ms(100);
     }
 }
