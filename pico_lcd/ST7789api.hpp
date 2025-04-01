@@ -11,7 +11,11 @@ class ST7789disp {
     private:   
         spi_inst_t *spi;
         uint8_t cs_pin, res_pin, dc_pin;
-        uint16_t height, width;
+        uint16_t height, width, address_x_offset = 0, address_y_offset = 0;
+        // use percistent buffers to prevent memory leaks [[[
+        uint8_t addr_x[4], addr_y[4]; 
+        uint8_t color_block[64];
+        // ]]]
         void hardwareReset();
         void SPIConfig();
         void softwareReset();
@@ -25,6 +29,8 @@ class ST7789disp {
             uint8_t res_pin
         );
         void intit();
+        void setOffsetX(uint16_t offset);
+        void setOffsetY(uint16_t offset);
         void writeCommand(uint8_t cmd);
         void writeCommandData(uint8_t cmd, uint8_t * data, uint len);
         void writeData(uint8_t * data, uint len);

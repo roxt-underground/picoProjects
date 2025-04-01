@@ -31,12 +31,13 @@
 
 #define delay sleep_ms
 
+#define x_offset 34
+#define y_offset 0
+
 
 int main()
 {
     stdio_init_all();
-
-    const uint8_t logo[521] = "gjkhkuhiu";
 
     // SPI initialisation. This example will use SPI at 1MHz.
     spi_init(SPI_PORT, 200*1000*1000);
@@ -58,35 +59,46 @@ int main()
         PIN_RES
     );
     display->intit();
+    display->setOffsetX(x_offset);
+    display->setOffsetY(y_offset);
     // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
 
     uint16_t i;
 
     sleep_ms(3000);
-    #define _x 34
-    #define _y 0
 
-    uint16_t x ,y, color;
+    uint16_t x ,y, color=0x0000;
 
     while (true) {
 
-        display->fill(0+_x, LCD_W+_x, 0, LCD_H, 0x0000);
-        for (i=0; i < 1; i++) {
-            x = rand() % (LCD_W - __YAMAHA96_WIDTH);
-            y = rand() % (LCD_H - __YAMAHA96_HEIGHT);
-            // color = rand() % 0xFFFF;
+        display->fill(0, LCD_W, 0, LCD_H, 0x0000);
+        for (i=0; i < 128; i++) {
+            x = rand() % (LCD_W - 5);//__YAMAHA96_WIDTH);
+            y = rand() % (LCD_H - 5);//__YAMAHA96_HEIGHT);
+            color = rand() % 0xFFFF;
 
-            // display->fill(x+_x, x+5+_x, y+_y, y+5+_y, color);
-            display->setAddress(
-                x + _x,
-                x + __YAMAHA96_WIDTH + _x -1,
-                y + _y, 
-                y +  __YAMAHA96_HEIGHT + _y -1
-            );
-            display->prepareWrite();
-            display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
-            // display->putColorBuff
-            sleep_ms(2000);
+            display->fill(x, x+5, y, y+5, color);
+            // display->setAddress(
+            //     x + _x,
+            //     x + __YAMAHA96_WIDTH + _x -1,
+            //     y + _y, 
+            //     y +  __YAMAHA96_HEIGHT + _y -1
+            // );
+            // display->prepareWrite();
+            // display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
+            sleep_ms(10);
         }
+        x = rand() % (LCD_W - __YAMAHA96_WIDTH);
+        y = rand() % (LCD_H - __YAMAHA96_HEIGHT);
+        display->setAddress(
+            x,
+            x + __YAMAHA96_WIDTH + -1,
+            y, 
+            y +  __YAMAHA96_HEIGHT + -1
+        );
+        display->prepareWrite();
+        display->writeData(__yamaha96_array, __YAMAHA96_SIZE);
+
+        sleep_ms(100);
     }
 }

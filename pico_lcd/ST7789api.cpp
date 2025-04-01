@@ -121,16 +121,27 @@ void ST7789disp::writeCommandData(uint8_t cmd, uint8_t * data, uint len){
     gpio_put(cs_pin, 1);
 }
 
+void _split(uint8_t *dest, uint16_t value){
+    dest[0] = (uint8_t)(value >> 8);
+    dest[1] = (uint8_t)(value);
+}
+
+void ST7789disp::setOffsetX(uint16_t offset){
+    address_x_offset = offset;
+}
+void ST7789disp::setOffsetY(uint16_t offset){
+    address_y_offset = offset;
+}
 void ST7789disp::setAddress(uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey) {
     uint8_t * buff;
-    uint16_t addr[2];
-    
-    buff = convert16to8((uint16_t[]){sx, ex}, 2);
-    writeCommandData(ST7789_CMD_CASET, buff, 4);
-    buff = convert16to8((uint16_t[]){sy, ey}, 2);
-    writeCommandData(ST7789_CMD_RASET, buff, 4);
 
-    free(buff);
+    _split(&addr_x[0], sx + address_x_offset);
+    _split(&addr_x[2], ex + address_x_offset);
+    _split(&addr_y[0], sy + address_y_offset);
+    _split(&addr_y[2], ey + address_y_offset);
+
+    writeCommandData(ST7789_CMD_CASET, addr_x, 4);
+    writeCommandData(ST7789_CMD_RASET, addr_y, 4);
 }
 
 void ST7789disp::putColorBuff(uint16_t * color, uint32_t len) {
@@ -155,17 +166,14 @@ void ST7789disp::prepareWrite() {
 void ST7789disp::fill(uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey, uint16_t color) {
     const uint32_t size = (abs(ex-sx)+1) * (abs(ey-sy)+1);
     uint i;
+    for (i=0; i < 63; i+=2) { 
+        _split(&color_block[i], color);
+    }
     setAddress(sx, ex, sy, ey);
-    
-    uint16_t color_block[32];
-    uint8_t * color_result;
-    for (i=0; i < 32; i++) { color_block[i] = color; }
-    color_result = convert16to8(color_block, 32);
     prepareWrite();
     for (i=0; i<=size; i+=32) {
-        writeData(color_result, 64);
+        writeData(color_block, 64);
     }
-    free(color_result);
 }
 
 
