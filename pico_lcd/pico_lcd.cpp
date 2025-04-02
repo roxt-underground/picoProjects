@@ -74,6 +74,8 @@ int main()
     FontApi * font = new FontApi(
         __CONTHRAX_SB_HEIGHT,
         __CONTHRAX_SB_WIDTH,
+        (unsigned char *) __conthrax_sb_alphabet, 
+        __CONTHRAX_SB_ALPHABE_LEN,
         __conthrax_sb_array
     );
     // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
@@ -98,15 +100,14 @@ int main()
         font->writeBuff(display, buff, 32);
 
         sprintf((char *)buff, "Y=%d", y);
-        font->setCursor(10, 30);
+        font->setCursor(10, 36);
         font->writeBuff(display, buff, 32);
 
         for (i=0; i < 128; i++) {
-            x = get_rand_32() % (LCD_W - __CONTHRAX_SB_WIDTH);//__YAMAHA96_WIDTH);
-            y = get_rand_32() % (LCD_H - __CONTHRAX_SB_HEIGHT);//__YAMAHA96_HEIGHT);
+            x = get_rand_32() % (LCD_W - 5);
+            y = get_rand_32() % (LCD_H - 5);
             color = get_rand_32() % 0xFFFF;
             display->fill(x, x+5, y, y+5, color);
-            display->setAddress(x, x+__CONTHRAX_SB_WIDTH-1, y, y+__CONTHRAX_SB_HEIGHT-1);
             sleep_ms(10);
         }
         sleep_ms(100);

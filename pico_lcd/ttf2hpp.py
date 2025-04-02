@@ -13,7 +13,7 @@ class Convert:
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 
         'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
         '0','1','2','3','4','5','6','7','8','9','+','-','.',',','=',':',';')
-    font_size = 12
+    font_size = 20
     bg_color =(0,0,0)
 
     def __init__(self, font_path, header_path):
@@ -23,13 +23,12 @@ class Convert:
     def run(self):
         self.font = ImageFont.truetype(self.font_path, self.font_size)
 
-        self.img_h, self.img_w = (16, 12)
-        # logger.info(f'Image size: {self.img_h}x{self.img_w}')
-        # self.img = img.convert('RGB')
+        self.img_h, self.img_w = (26, 24)
 
         with open(self.header_path, 'wb') as header_output:
             self.output = header_output
             self.init_header()
+            self.fill_alphabet()
             self.fill_content()
         
     def init_header(self):
@@ -39,6 +38,22 @@ class Convert:
         self.print(f"#define {self.base_var_name.upper()}_WIDTH {self.img_w}")
         self.print(f"#define {self.base_var_name.upper()}_HEIGHT {self.img_h}")
         self.print(f'#define {self.arr_size_name} {self.img_h * self.img_w * 2 * len(self.alphas)}')
+
+    def fill_alphabet(self):
+        _slash = '\\'
+        _double_slash = '\\\\'
+
+        self.print('')
+        alpha_len_cons = f'{self.base_var_name.upper()}_ALPHABE_LEN'
+        self.print(f'#define {alpha_len_cons} ', len(self.alphas),'\n')
+        
+        self.print(f'const unsigned char {self.base_var_name}_alphabet[{alpha_len_cons}] = {{')
+        for chunk in range(0, len(self.alphas) + 1, 32):
+            ender = ''
+            if self.alphas[chunk+32:chunk+33]:
+                ender = ','
+            self.print(' '*4, ','.join(f"'{o.replace(_slash,_double_slash)}'" for o in self.alphas[chunk:chunk+32]), ender)
+        self.print("};")
 
     def fill_content(self):
         self.print('\n')

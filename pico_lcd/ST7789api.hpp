@@ -45,8 +45,7 @@ class FontApi {
     private:
         uint16_t font_height;
         uint16_t font_width;
-        std::unordered_map<unsigned char, uint32_t> table ;
-        const unsigned char base_alfabet[74] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z','0','1','2','3','4','5','6','7','8','9','+','-','.',',','=',':',';'};
+        std::unordered_map<unsigned char, uint32_t> table;
         uint8_t * _array_of_pixels;
     protected:
         uint16_t cursor[2];
@@ -55,6 +54,8 @@ class FontApi {
         FontApi(
             uint16_t font_height,
             uint16_t font_weght,
+            unsigned char * alphabet,
+            uint16_t alphabet_len,
             uint8_t * array_of_pixels
         );
         uint8_t * getSimbolImage(unsigned char ch);

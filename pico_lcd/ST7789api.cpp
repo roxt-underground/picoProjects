@@ -192,6 +192,8 @@ uint8_t * convert16to8(uint16_t *buff, uint16_t len){
 FontApi::FontApi(
     uint16_t _font_height,
     uint16_t _font_width,
+    unsigned char * alphabet,
+    uint16_t alphabet_len,
     uint8_t * array_of_pixels
 ){
     uint16_t i;
@@ -201,12 +203,15 @@ FontApi::FontApi(
     char_size = _font_height * _font_width * 2;
     _array_of_pixels = array_of_pixels;
 
-    for (i=0; i < sizeof(base_alfabet); i++) {
-        table[base_alfabet[i]] = char_size * i;
+    for (i=0; i < alphabet_len; i++) {
+        table[alphabet[i]] = char_size * i;
     }
 }
 
 uint8_t * FontApi::getSimbolImage(unsigned char ch) {
+    if (auto search = table.find(ch); search == table.end()) {
+        return &_array_of_pixels[table['.']];
+    }
     return &_array_of_pixels[table[ch]];
 }
 
