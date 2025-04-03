@@ -13,3 +13,10 @@ My display has pins:
 | DC  | Switch beatween data and commands. Pull down for command. Pull up for data.   |
 | CS  | SPI bus device select. Pull down for select current device.                   |
 | BL  | Backlight power supply. Can be connected to VDD or dedicated PWM pin.         |
+
+
+# Thanks:
+
+- Take some examples from https://github.com/ArmDeveloperEcosystem/
+- Upir on you youtube: https://www.youtube.com/watch?v=pbqgrv5YSf0 
+
