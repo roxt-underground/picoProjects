@@ -8,6 +8,7 @@ logger = logging.getLogger()
 class Convert:
 
     typing = 'uint8_t'
+    bits_per_color = (5, 6, 5)
 
     def __init__(self, image_path, header_path):
         self.image_path = image_path
@@ -46,6 +47,19 @@ class Convert:
             pix = self.std_to_565(self.img.getpixel((i, row_num)))
             result.append(self.pix2uint8(pix))
         return ','.join(result)
+    
+    def std_to_shrot(self, pixel):
+        float_pixel = [o/255 for o in pixel]
+        rgb: list[int] = [round(float_pixel[i] * (2 ** self.bits_per_color[i] - 1)) for i in range(3)]
+
+        bits = sum(self.bits_per_color)
+
+        result = 0
+        for i, color_bits in enumerate(self.bits_per_color):
+            bits -= color_bits
+            result = result | rgb[i] << bits
+
+        return result
 
     @staticmethod
     def std_to_565(pixel):

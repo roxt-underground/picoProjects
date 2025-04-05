@@ -48,13 +48,19 @@ pico_enable_stdio_usb(pico_lcd 1)
 add_library(st7789api
     ST7789api.cpp
 )
+add_library(st7789font
+    st7789font.cpp
+)
 target_precompile_headers(st7789api 
     PUBLIC 
         "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/ST7789api.hpp>"
 )
+target_link_libraries(st7789font
+    pico_stdlib
+    st7789api
+)
 target_link_libraries(st7789api
     pico_stdlib
-    pico_rand
     hardware_spi
 )
 
@@ -73,6 +79,8 @@ target_include_directories(pico_lcd PRIVATE
 target_link_libraries(pico_lcd 
         hardware_spi
         st7789api
+        pico_rand
+        st7789font
         )
 
 pico_add_extra_outputs(pico_lcd)

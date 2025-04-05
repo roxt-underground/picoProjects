@@ -13,9 +13,12 @@ class ST7789disp {
         spi_inst_t *spi;
         uint8_t cs_pin, res_pin, dc_pin;
         uint16_t height, width, address_x_offset = 0, address_y_offset = 0;
+        uint8_t memory_data_acl_conf;
         // use percistent buffers to prevent memory leaks [[[
         uint8_t addr_x[4], addr_y[4]; 
         uint8_t color_block[64];
+        uint8_t scroll_config[6]; // 3 params per 2 bytes
+        uint8_t scroll_position[2];
         // ]]]
         void hardwareReset();
         void SPIConfig();
@@ -29,6 +32,7 @@ class ST7789disp {
             uint8_t dc_pin,
             uint8_t res_pin
         );
+        void setMemACL(uint8_t config);
         void intit();
         void setOffsetX(uint16_t offset);
         void setOffsetY(uint16_t offset);
@@ -39,6 +43,12 @@ class ST7789disp {
         void putColorBuff(uint16_t * color, uint32_t len);
         void prepareWrite();
         void fill(uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey, uint16_t color);
+
+        void setScrollArea(uint16_t top_fixed_area, uint16_t vertical_scroll_area, uint16_t bottom_fixed_area);
+        void setScrollFullScreen() {setScrollArea(0, height, 0);};
+
+        void setScrollPosition(uint16_t vertical_scroll_position);
+
 };
 
 class FontApi {

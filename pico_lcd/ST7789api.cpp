@@ -53,7 +53,7 @@ void ST7789disp::softwareReset() {
         sleep_ms(5);
 
         // MADCTL
-        writeCommandData(ST7789_CMD_MADCTL, (uint8_t[]){ST7789_MADCTL_DEFAULT}, 1);
+        writeCommandData(ST7789_CMD_MADCTL, &memory_data_acl_conf, 1);
         sleep_ms(5);
         setAddress(0, height, 0, width);
 
@@ -82,12 +82,17 @@ ST7789disp::ST7789disp(
     this->cs_pin = cs_pin;
     this->dc_pin = dc_pin;
     this->res_pin = res_pin;
+    memory_data_acl_conf = ST7789_MADCTL_DEFAULT;
 }
 
 void ST7789disp::intit() {
     SPIConfig();
     hardwareReset();
     softwareReset();
+}
+
+void ST7789disp::setMemACL(uint8_t config) {
+    memory_data_acl_conf = config;
 }
 
 void ST7789disp::writeCommand(uint8_t cmd) {
@@ -177,6 +182,18 @@ void ST7789disp::fill(uint16_t sx, uint16_t ex, uint16_t sy, uint16_t ey, uint16
     }
 }
 
+void ST7789disp::setScrollArea(uint16_t top_fixed_area, uint16_t vertical_scroll_area, uint16_t bottom_fixed_area)  {
+    // Vertical scrolling arrea
+    _split(&scroll_config[0], top_fixed_area);
+    _split(&scroll_config[2], vertical_scroll_area);
+    _split(&scroll_config[4], bottom_fixed_area);
+    writeCommandData(ST7789_CMD_VSCRDEF, scroll_config, 6);
+}
+
+void ST7789disp::setScrollPosition(uint16_t vertical_scroll_position) {
+    _split(scroll_position, vertical_scroll_position);
+    writeCommandData(ST7789_CMD_VSCRSADD, scroll_position, 2);
+}
 
 uint8_t * convert16to8(uint16_t *buff, uint16_t len){
     uint8_t * data = (uint8_t *)malloc(sizeof(uint8_t) * len *2);
@@ -187,57 +204,4 @@ uint8_t * convert16to8(uint16_t *buff, uint16_t len){
     }
     return data;
     free(buff);
-}
-
-FontApi::FontApi(
-    uint16_t _font_height,
-    uint16_t _font_width,
-    unsigned char * alphabet,
-    uint16_t alphabet_len,
-    uint8_t * array_of_pixels
-){
-    uint16_t i;
-
-    font_width = _font_width;
-    font_height = _font_height;
-    char_size = _font_height * _font_width * 2;
-    _array_of_pixels = array_of_pixels;
-
-    for (i=0; i < alphabet_len; i++) {
-        table[alphabet[i]] = char_size * i;
-    }
-}
-
-uint8_t * FontApi::getSimbolImage(unsigned char ch) {
-    if (auto search = table.find(ch); search == table.end()) {
-        return &_array_of_pixels[table['.']];
-    }
-    return &_array_of_pixels[table[ch]];
-}
-
-void FontApi::writeChar(
-    ST7789disp * display, 
-    unsigned char ch
-){
-    display->setAddress(
-        cursor[0],
-        cursor[0] + font_width - 1,
-        cursor[1],
-        cursor[1] + font_height - 1
-    );
-    display->prepareWrite();
-    display->writeData(getSimbolImage(ch), char_size);
-    cursor[0] += font_width;
-}
-
-void FontApi::writeBuff(
-    ST7789disp * display,
-    unsigned char * buff, 
-    uint16_t len
-) {
-    uint16_t i;
-    for (i=0; i< len; i++) {
-        if (buff[i] == 0) return; // end of string
-        writeChar(display, buff[i]);
-    }
 }

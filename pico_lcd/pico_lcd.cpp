@@ -22,16 +22,24 @@
 #define PIN_RES 20
 #define PIN_DC 21
 
+// #define __swap
+#ifdef __swap
+#define LCD_W 320
+#define LCD_H 172
+#define x_offset 0
+#define y_offset 34
+#else
 #define LCD_H 320
 #define LCD_W 172
+#define x_offset 34
+#define y_offset 0
+#endif
 
 #define LOW 0
 #define HIGH 1
 
 #define delay sleep_ms
 
-#define x_offset 34
-#define y_offset 0
 
 void draw_logo(ST7789disp * display, uint16_t x, uint16_t y) {
     display->setAddress(
@@ -67,6 +75,9 @@ int main()
         PIN_DC, 
         PIN_RES
     );
+
+    display->setMemACL(ST7789_MADCTL_ROTATE_180);
+
     display->intit();
     display->setOffsetX(x_offset);
     display->setOffsetY(y_offset);
@@ -103,6 +114,12 @@ int main()
         font->setCursor(10, 36);
         font->writeBuff(display, buff, 32);
 
+        // display->setScrollFullScreen();
+        // for (i=0; i<LCD_H; i+=2) {
+        //     display->setScrollPosition(i);
+        //     sleep_ms(10);
+        // }
+
         for (i=0; i < 128; i++) {
             x = get_rand_32() % (LCD_W - 5);
             y = get_rand_32() % (LCD_H - 5);
@@ -110,6 +127,7 @@ int main()
             display->fill(x, x+5, y, y+5, color);
             sleep_ms(10);
         }
+        display->setScrollPosition(0);
         sleep_ms(100);
     }
 }

@@ -27,14 +27,21 @@
 #define ST7789_CMD_TEON              0x35 // Tearing line effect on
 #define ST7789_CMD_MADCTL            0x36 // Memory data access control
 #define ST7789_MADCTL_DEFAULT        0b00000000 
-#define ST7789_MADCTL_BOTTOM_TOTOP   0b10000000 // botom to top
-#define ST7789_MADCTL_RIGH_TO_LEFT   0b01000000 // right to left
+#define ST7789_MADCTL_BOTTOM_TO_TOP  0b10010000 // botom to top
+#define ST7789_MADCTL_RIGH_TO_LEFT   0b01000100 // right to left
+#define ST7789_MADCTL_REVERCE_COLUMN 0b00100000 // right to left
+#define ST7789_MADCTL_ROTATE_90      ST7789_MADCTL_REVERCE_COLUMN | ST7789_MADCTL_BOTTOM_TO_TOP
+#define ST7789_MADCTL_ROTATE_180     ST7789_MADCTL_RIGH_TO_LEFT | ST7789_MADCTL_BOTTOM_TO_TOP
+#define ST7789_MADCTL_ROTATE_270     ST7789_MADCTL_REVERCE_COLUMN | ST7789_MADCTL_RIGH_TO_LEFT
 #define ST7789_MADCTL_BGR            0b00001000 // BGR pixel format
 #define ST7789_CMD_VSCRSADD          0x37 // Vertical address scrolling
 #define ST7789_CMD_IDMOFF            0x38 // Idle mode off
 #define ST7789_CMD_IDMON             0x39 // Idle mode on
 #define ST7789_CMD_COLMOD            0x3a // Interface pixel format
+#define ST7789_COLMOD_65K            0b01010000
+#define ST7789_COLMOD_16BIT          0b00000101
 #define ST7789_COLMOD_65K_16BIT      0b01010101 // COLMOD variant
+
 #define ST7789_COLMOD_
 #define ST7789_CMD_RAMWRC            0x3c // Memory write continue
 #define ST7789_CMD_RAMRDC            0x3e // Memory read continue
