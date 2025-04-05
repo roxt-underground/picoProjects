@@ -19,4 +19,5 @@ My display has pins:
 
 - Take some examples from https://github.com/ArmDeveloperEcosystem/
 - Upir on you youtube: https://www.youtube.com/watch?v=pbqgrv5YSf0 
+- Display driver datasheet https://www.waveshare.com/w/upload/a/ae/ST7789_Datasheet.pdf
 
