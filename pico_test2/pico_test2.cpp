@@ -172,7 +172,7 @@ void running_fire(Button *btn, PIO pio, uint sm) {
         for (int8_t n = 0; n < fire_nums; n++){
             br = 127 * (fires[n] % br_dif) / br_dif;
             pixels[int16_t (fires[n] / br_dif)] = hslToRGB((hue + n * 16) % 360, 255, 127 - br);
-            pixels[int16_t (fires[n] / br_dif) + 1] = hslToRGB((hue + n * 16) % 360, 255, br);
+            pixels[(int16_t (fires[n] / br_dif) + 1) % NUM_PIXELS] = hslToRGB((hue + n * 16) % 360, 255, br);
         }
         for (uint8_t i=0; i < NUM_PIXELS; i++) {
             put_pixel(pio, sm, pixels[i]);         
