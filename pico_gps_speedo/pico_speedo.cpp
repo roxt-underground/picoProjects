@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/uart.h"
@@ -38,6 +39,13 @@
 #define MAX_NMEA_LENGTH 256
 #define BUFF_LEN 1024
 
+// Drag-time
+#define DRAG_READY 0
+#define DRAG_IN_PROCESS 1
+#define DRAG_DONE 2
+#define DRAG_FAIL 3
+
+// Display settings
 #define __swap
 #ifdef __swap
 #define LCD_W 320
@@ -63,7 +71,6 @@ static int chars_rxed = 0;
 static bool valid_sentence = false, speed_valid=false, valid_time=false;
 
 
-
 // info
 static float speed = 0;
 static int sats = 0;
@@ -73,6 +80,18 @@ static uint64_t
     last_valid_sent = 0, 
     last_second_update = 0;
 
+// drag 
+struct speedLog
+{
+    uint64_t moment;
+    float speed;/* data */
+};
+
+speedLog speed_log[1000];
+static uint16_t speed_log_cursor = 0;
+static uint8_t drag_state = DRAG_FAIL;
+
+void drag_speed_recived();
 
 // void draw_logo(ST7789disp * display, uint16_t x, uint16_t y) {
 //     display->setAddress(
@@ -132,6 +151,7 @@ void on_uart_rx() {
             speed = gps.f_speed_kmph();
             speed_valid = true;
             last_valid_sent = time_us_64();
+            drag_speed_recived();
         }
         chars_rxed++;
     }
@@ -150,6 +170,7 @@ void log_gps_stats() {
 
     if (_sats < 3) {
         speed_valid = false;
+        drag_state = DRAG_FAIL;
     }
     if (speed_valid) {
         if (time_us_64() - last_valid_sent > 3000000) {
@@ -175,7 +196,6 @@ void log_gps_stats() {
         valid_time = true;
         // printf("%02d/%02d/%02d %02d:%02d:%02d\n", day, month, year, hour, minute, _second);
         if (_second != second) {
-            printf("second changed: %d -> %d", second, _second);
             second = _second;
             last_second_update = time_us_64();
         }
@@ -267,6 +287,25 @@ int main()
         }
         fontLarge->writeBuff(display, buff, 32);
 
+        // Draw drag
+        font->setCursor(10, 100);
+        sprintf((char *)buff, "%d", drag_state);
+        font->writeBuff(display, buff, 32);
+
+        if (drag_state == DRAG_IN_PROCESS) {
+            sprintf((char *)buff, "%.1fs", 
+                float(time_us_64() - speed_log[0].moment) / 1000000.0
+            );
+        }
+        else if (drag_state == DRAG_DONE) {
+            sprintf((char *)buff, "%.1fs", 
+                float(speed_log[speed_log_cursor].moment - speed_log[0].moment) / 1000000.0
+            );
+        }
+        else sprintf((char *)buff, "     ");
+        font->setCursor(60, 100);
+        font->writeBuff(display, buff, 32);
+
         // Draw sats
         if (sats < __SAT_ICONS_ALPHABE_LEN) buff[0] = sats+1;
         else buff[0] = __SAT_ICONS_ALPHABE_LEN;
@@ -291,8 +330,52 @@ int main()
     }
 }
 
+
 uint8_t tz_hour(uint8_t hr) {
     uint8_t new_hr = hr + timezone;
     new_hr = new_hr % 24;
     return new_hr;
+}
+
+void write_speed_log() {
+        if (speed_log_cursor > 1000) {
+            printf("Drag: fail too long race\n");
+            drag_state = DRAG_FAIL;
+            return;
+        }
+        speed_log[speed_log_cursor].moment = time_us_64();
+        speed_log[speed_log_cursor].speed = speed;
+        speed_log_cursor++;
+}
+
+void drag_speed_recived() {
+    if (sats < 7) {
+        printf("Drag: Fail on sats: %d\n", sats);
+        drag_state = DRAG_FAIL;
+        return;
+    }
+    if (speed_valid && (int(speed * 100) == 0)) {
+        drag_state = DRAG_READY;
+        speed_log_cursor = 0;
+        write_speed_log();
+        return;
+    }
+    if (drag_state == DRAG_READY) {
+        drag_state = DRAG_IN_PROCESS;
+        write_speed_log();
+        return;
+    }
+    if (drag_state != DRAG_IN_PROCESS) return;
+    printf("Drag: Running cursor:%d last log:%.4f last:%.4f time: %.3f\n", 
+        speed_log_cursor, speed_log[speed_log_cursor-1].speed, speed, float(time_us_64() - speed_log[0].moment) / 1000000.0);
+    if ((speed_log[speed_log_cursor - 1].speed - 0.5) > speed) {
+        printf("Drag: fail on sped_low: %.4f > %.4f\n", speed_log[speed_log_cursor-1].speed, speed);
+        drag_state = DRAG_FAIL;
+        return;
+    }
+    write_speed_log();
+    if (int(speed * 100) > 10000) {
+        drag_state = DRAG_DONE;
+        return;
+    }
 }

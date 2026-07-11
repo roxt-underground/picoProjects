@@ -21,6 +21,7 @@ class Convert:
         # '[', '\\', ']', '^', '_', 
         # 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 
         # 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        's',
         '0','1','2','3','4','5','6','7','8','9',
         '+','-','.',',','=',':',';',' '
         )
@@ -46,6 +47,7 @@ class Convert:
         "-": (5, 0 - height_blackzone),
         "=": (4, 0 - height_blackzone),
         ":": (8, 0 - height_blackzone),
+        ".": (4, 0 - height_blackzone),
     }
 
     _quotes = True
@@ -155,7 +157,8 @@ class Convert:
 
     @property
     def base_var_name(self):
-        return f'__{(self.font_path.split(".")[0]).replace(" ", "_").replace("-", "_")}'
+        base_name = self.font_path.split("/")[-1]
+        return f'__{(base_name.split(".")[0]).replace(" ", "_").replace("-", "_")}'
 
     @property
     def arr_size_name(self):
