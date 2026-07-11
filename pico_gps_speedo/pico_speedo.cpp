@@ -45,6 +45,8 @@
 #define DRAG_DONE 2
 #define DRAG_FAIL 3
 
+#define DRAG_SPEED_DRIFT 0.5
+
 // Display settings
 #define __swap
 #ifdef __swap
@@ -368,7 +370,7 @@ void drag_speed_recived() {
     if (drag_state != DRAG_IN_PROCESS) return;
     printf("Drag: Running cursor:%d last log:%.4f last:%.4f time: %.3f\n", 
         speed_log_cursor, speed_log[speed_log_cursor-1].speed, speed, float(time_us_64() - speed_log[0].moment) / 1000000.0);
-    if ((speed_log[speed_log_cursor - 1].speed - 0.5) > speed) {
+    if ((speed_log[speed_log_cursor - 1].speed - DRAG_SPEED_DRIFT) > speed) {
         printf("Drag: fail on sped_low: %.4f > %.4f\n", speed_log[speed_log_cursor-1].speed, speed);
         drag_state = DRAG_FAIL;
         return;
