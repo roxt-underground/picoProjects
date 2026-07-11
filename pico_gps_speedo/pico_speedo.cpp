@@ -11,7 +11,7 @@
 
 // icons and fonts
 #include "logo.hpp"
-// #include "font.hpp"
+#include "font.hpp"
 #include "fontMoby.hpp"
 #include "aw.hpp"
 
@@ -54,11 +54,14 @@
 #define LOW 0
 #define HIGH 1
 
+#define timezone 3
+
 #define delay sleep_ms
 
 TinyGPS gps;
 static int chars_rxed = 0;
-static bool valid_sentence = false, speed_valid=false;
+static bool valid_sentence = false, speed_valid=false, valid_time=false;
+
 
 
 // info
@@ -66,7 +69,9 @@ static float speed = 0;
 static int sats = 0;
 static uint8_t month, day, hour, minute, second, hundredths;
 
-static uint64_t last_valid_sent = 0;
+static uint64_t 
+    last_valid_sent = 0, 
+    last_second_update = 0;
 
 
 // void draw_logo(ST7789disp * display, uint16_t x, uint16_t y) {
@@ -88,6 +93,8 @@ static uint64_t last_valid_sent = 0;
  * configures the TX and RX pins, and enables the UART FIFO.
  */
 void on_uart_rx();
+
+uint8_t tz_hour(uint8_t hr);
 
 void uart_gps_init()
 {
@@ -133,6 +140,7 @@ void on_uart_rx() {
 void log_gps_stats() {
     unsigned long chars;
     unsigned short sentences, failed;
+    uint8_t _second;
 
     uint8_t _sats = gps.satellites();
 
@@ -144,7 +152,7 @@ void log_gps_stats() {
         speed_valid = false;
     }
     if (speed_valid) {
-        if (time_us_64() - last_valid_sent > 100000) {
+        if (time_us_64() - last_valid_sent > 3000000) {
             speed_valid = false;
         }
     }
@@ -160,14 +168,20 @@ void log_gps_stats() {
     printf("Stats: chars=%d sents=%d fail=%d\n", chars, sentences, failed);
     printf("Visible sats: %d\n", sats);
 
-    gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
+    gps.crack_datetime(&year, &month, &day, &hour, &minute, &_second, &hundredths, &age);
 
-    if (age == TinyGPS::GPS_INVALID_AGE)
-    printf("******* invalid date *******\n");
-    else
+    if (age != TinyGPS::GPS_INVALID_AGE)
     {
-        printf("%02d/%02d/%02d %02d:%02d:%02d\n", month, day, year, hour, minute, second);
+        valid_time = true;
+        // printf("%02d/%02d/%02d %02d:%02d:%02d\n", day, month, year, hour, minute, _second);
+        if (_second != second) {
+            printf("second changed: %d -> %d", second, _second);
+            second = _second;
+            last_second_update = time_us_64();
+        }
     }
+    // else printf("******* invalid date *******\n");
+    if (time_us_64() - last_second_update > 3000000) valid_time = false;
 }
 
 int main()
@@ -202,6 +216,14 @@ int main()
 
     uart_gps_init();
 
+    FontApi * font = new FontApi(
+        __CONTHRAX_SB_HEIGHT,
+        __CONTHRAX_SB_WIDTH,
+        (unsigned char *) __conthrax_sb_alphabet,
+        __CONTHRAX_SB_ALPHABE_LEN,
+        __conthrax_sb_array
+    );
+
     FontApi * fontLarge = new FontApi(
         __MOBY_MONOSPACE_HEIGHT,
         __MOBY_MONOSPACE_WIDTH,
@@ -230,6 +252,7 @@ int main()
     while (true) {
 
         // draw_logo(display, x, y);
+        // Draw speed
         if (speed_valid) {
             sprintf((char *)buff, "%.1f   ", speed);
         }
@@ -244,15 +267,32 @@ int main()
         }
         fontLarge->writeBuff(display, buff, 32);
 
+        // Draw sats
         if (sats < __SAT_ICONS_ALPHABE_LEN) buff[0] = sats+1;
         else buff[0] = __SAT_ICONS_ALPHABE_LEN;
         buff[1] = '\0';
         satFont->setCursor(240, 136);
         satFont->writeBuff(display, buff, 32);
 
+        // Draw time
+        if (valid_time) {
+            sprintf((char *)buff, "%02d:%02d", tz_hour(hour), minute);
+        }
+        else {
+            sprintf((char *)buff, "--:--");
+        }
+        font->setCursor(10, 137);
+        font->writeBuff(display, buff, 32);
+
         display->setScrollPosition(0);
 
         log_gps_stats();
         sleep_ms(300);
     }
+}
+
+uint8_t tz_hour(uint8_t hr) {
+    uint8_t new_hr = hr + timezone;
+    new_hr = new_hr % 24;
+    return new_hr;
 }
