@@ -11,9 +11,10 @@
 #include "hardware/irq.h"
 
 // icons and fonts
-#include "logo.hpp"
+// #include "logo.hpp"
 #include "font.hpp"
 #include "fontMoby.hpp"
+#include "fontDrag.hpp"
 #include "aw.hpp"
 
 // SPI Defines
@@ -117,7 +118,9 @@ void on_uart_rx();
 
 uint8_t tz_hour(uint8_t hr);
 
-void gps_puts(char * sent) {
+unsigned char drag_state_to_iconchar(uint8_t state);
+
+void gps_puts(const char * sent) {
     uart_puts(UART_ID, sent);
     uart_putc(UART_ID, '\r');
     uart_putc(UART_ID, '\n');
@@ -272,6 +275,14 @@ int main()
         __SAT_ICONS_ALPHABE_LEN,
         __sat_icons_array
     );
+
+    FontApi * fontDrag = new FontApi(
+        __FONTAWESOME_WEBFONT_HEIGHT,
+        __FONTAWESOME_WEBFONT_WIDTH,
+        (unsigned char *) __fontawesome_webfont_alphabet,
+        __FONTAWESOME_WEBFONT_ALPHABE_LEN,
+        __fontawesome_webfont_array
+    );
     // For more examples of SPI use see https://github.com/raspberrypi/pico-examples/tree/master/spi
 
     uint16_t i;
@@ -301,9 +312,8 @@ int main()
         fontLarge->writeBuff(display, buff, 32);
 
         // Draw drag
-        font->setCursor(10, 100);
-        sprintf((char *)buff, "%d", drag_state);
-        font->writeBuff(display, buff, 32);
+        fontDrag->setCursor(10, 100);
+        fontDrag->writeChar(display, drag_state_to_iconchar(drag_state));
 
         if (drag_state == DRAG_IN_PROCESS) {
             sprintf((char *)buff, "%.1fs", 
@@ -311,8 +321,9 @@ int main()
             );
         }
         else if (drag_state == DRAG_DONE) {
-            sprintf((char *)buff, "%.1fs", 
-                double(speed_log[speed_log_cursor].moment - speed_log[0].moment) / 1000000.0
+            sprintf((char *)buff, "%.1fs %.1f", 
+                double(speed_log[speed_log_cursor].moment - speed_log[0].moment) / 1000000.0,
+                speed_log[speed_log_cursor].speed
             );
         }
         else sprintf((char *)buff, "     ");
@@ -390,5 +401,21 @@ void drag_speed_recived() {
     if (int(speed * 100) > 10000) {
         drag_state = DRAG_DONE;
         return;
+    }
+}
+
+unsigned char drag_state_to_iconchar(uint8_t state) {
+    switch (state)
+    {
+    case 0:
+        return __FONTAWESOME_WEBFONT_I_OK;
+    case 1:
+        return __FONTAWESOME_WEBFONT_I_ROKET;
+    case 2:
+        return __FONTAWESOME_WEBFONT_I_FINISH_FLAG;
+    case 3:
+        return __FONTAWESOME_WEBFONT_I_FAIL;
+    default:
+        return 0;
     }
 }

@@ -12,9 +12,11 @@ logger = logging.getLogger()
 red = (255, 46, 46)
 orange = (255, 167, 89)
 green = (128, 255, 130)
+light_yellow = (255, 228, 166)
 
 class Convert:
     typing = 'uint8_t'
+    alfabet_typing = 'const unsigned char'
     alphas = (
         # 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
         # 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
@@ -83,6 +85,15 @@ class Convert:
         Overrides:
             char_placement_override = 
             {f'{_nl}            '.join(f"'{k}': {v}" for k, v in self.char_placement_override.items())}
+
+        fontApi connection:
+            FontApi * font = new FontApi(
+                {self.base_var_name.upper()}_HEIGHT,
+                {self.base_var_name.upper()}_WIDTH,
+                (unsigned char *) {self.base_var_name}_alphabet,
+                {self.base_var_name.upper()}_ALPHABE_LEN,
+                {self.base_var_name}_array
+            );
         """)
 
         self.print("*/")
@@ -94,16 +105,19 @@ class Convert:
             f"#define {self.arr_size_name} {self.img_h * self.img_w * 2 * len(self.alphas)}"
         )
 
-    def fill_alphabet(self):
+    def get_alfabet_alfa(self, ch):
         _slash = "\\"
         _double_slash = "\\\\"
+        return f"{self.quote}{ch.replace(_slash,_double_slash)}{self.quote}"
+
+    def fill_alphabet(self):
 
         self.print("")
         alpha_len_cons = f"{self.base_var_name.upper()}_ALPHABE_LEN"
         self.print(f"#define {alpha_len_cons} ", len(self.alphas), "\n")
 
         self.print(
-            f"const unsigned char {self.base_var_name}_alphabet[{alpha_len_cons}] = {{"
+            f"{self.alfabet_typing} {self.base_var_name}_alphabet[{alpha_len_cons}] = {{"
         )
         for chunk in range(0, len(self.alphas) + 1, 32):
             ender = ""
@@ -112,7 +126,7 @@ class Convert:
             self.print(
                 " " * 4,
                 ",".join(
-                    f"{self.quote}{o.replace(_slash,_double_slash)}{self.quote}"
+                    self.get_alfabet_alfa(o)
                     for o in self.alphas[chunk : chunk + 32]
                 ),
                 ender,
@@ -143,7 +157,7 @@ class Convert:
         self.img = Image.new("RGB", (self.img_w, self.img_h), self.bg_color)
         self.draw = ImageDraw.Draw(self.img)
         position = self.char_placement_override.get(ch, self.default_char_placement)
-        self.draw.text(position, ch, self.color, font=self.font)
+        self.draw.text(position, ch, self.get_font_color(ch), font=self.font)
 
     def image_row_to_str(self, row_num):
         result = []
@@ -151,6 +165,9 @@ class Convert:
             pix = self.std_to_565(self.img.getpixel((i, row_num)))
             result.append(self.pix2uint8(pix))
         return ",".join(result)
+
+    def get_font_color(self, ch):
+        return self.color
 
     @staticmethod
     def std_to_565(pixel):
@@ -240,9 +257,46 @@ class SatIcons(Convert):
     @property
     def base_var_name(self):
         return '__sat_icons'
+    
 
+class DragIcons(Convert):
+
+    alphas_names = {
+        "\uF00C": "Ok",
+        "\uF024": "Flag",
+        "\uF11E": "Finish flag",
+        "\uF057": "Fail",
+        "\uF135": "Roket",
+    }
+    alpha_color = {
+        "\uF00C": green,
+        "\uF024": red,
+        "\uF11E": (255,255,255),
+        "\uF057": red,
+        "\uF135": light_yellow,
+    }
+    alphas = list(alphas_names)
+    # alfabet_typing = 'const uint16_t '
+    font_size = 32
+    height_blackzone = 0
+    default_char_placement = (0, -1)
+    color = green
+    width_ratio = 1.05
+    char_placement_override = {}
+
+    def init_header(self):
+        super().init_header()
+        self.print("\n// Named alfas")
+        for ch, name in self.alphas_names.items():
+            self.print(f"#define {self.base_var_name.upper()}_I_{name.replace(' ', '_').upper()} {self.get_alfabet_alfa(ch)}")
+        
+    def get_alfabet_alfa(self, ch):
+        return f"0x{((ord(ch) - 0xF000) % 256):x}"
+    
+    def get_font_color(self, ch):
+        return self.alpha_color.get(ch, self.color)
 
 if __name__ == "__main__":
-    convert = Convert(sys.argv[1], sys.argv[2])
-    # convert = SatIcons(sys.argv[1], sys.argv[2])
+    # convert = Convert(sys.argv[1], sys.argv[2])
+    convert = DragIcons(sys.argv[1], sys.argv[2])
     convert.run()
