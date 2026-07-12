@@ -117,12 +117,18 @@ void on_uart_rx();
 
 uint8_t tz_hour(uint8_t hr);
 
+void gps_puts(char * sent) {
+    uart_puts(UART_ID, sent);
+    uart_putc(UART_ID, '\r');
+    uart_putc(UART_ID, '\n');
+}
+
 void uart_gps_init()
 {
     uart_init(UART_ID, BAUD_RATE);
-    // uart_puts(UART_ID, "$PMTK251,115200*1F\n\r");
-    // sleep_ms(20);
-    // uart_init(UART_ID, BAUD_RATE_NEXT);
+    gps_puts("$PCAS01,5*19");
+    sleep_ms(20);
+    uart_init(UART_ID, BAUD_RATE_NEXT);
 
     gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
@@ -136,8 +142,8 @@ void uart_gps_init()
     irq_set_enabled(UART1_IRQ, true);
     uart_set_irq_enables(UART_ID, true, false);
 
-    uart_puts(UART_ID, "$PMTK220,500*2B\r\n");
-    // uart_puts(UART_ID, "$PUBX,40,RMC,0,1,0,0,0,0*2C\r\n");
+    gps_puts("$PCAS02,150*1B");
+    gps_puts("$PCAS04,7*1E");
 }
 
 
@@ -188,8 +194,8 @@ void log_gps_stats() {
         valid_sentence = false;
     }
     gps.stats(&chars, &sentences, &failed);
-    printf("Stats: chars=%d sents=%d fail=%d\n", chars, sentences, failed);
-    printf("Visible sats: %d\n", sats);
+    // printf("Stats: chars=%d sents=%d fail=%d\n", chars, sentences, failed);
+    // printf("Visible sats: %d\n", sats);
 
     gps.crack_datetime(&year, &month, &day, &hour, &minute, &_second, &hundredths, &age);
 
@@ -204,6 +210,11 @@ void log_gps_stats() {
     }
     // else printf("******* invalid date *******\n");
     if (time_us_64() - last_second_update > 3000000) valid_time = false;
+
+    // detect chip code
+    // printf("*** ask info");
+    // uart_puts(UART_ID, "$PCAS06,0*1B\r\n");  // received: $GPTXT,01,01,02,SW=URANUS4,V4.3.0.5*18 
+    
 }
 
 int main()
@@ -282,10 +293,10 @@ int main()
             sprintf((char *)buff, "--.-  ");
         }
         if (speed < 100) {
-            fontLarge->setCursor(5 + __MOBY_MONOSPACE_WIDTH, 5);
+            fontLarge->setCursor(10 + __MOBY_MONOSPACE_WIDTH, 5);
         }
         else {
-            fontLarge->setCursor(5, 5);
+            fontLarge->setCursor(10, 5);
         }
         fontLarge->writeBuff(display, buff, 32);
 
@@ -296,12 +307,12 @@ int main()
 
         if (drag_state == DRAG_IN_PROCESS) {
             sprintf((char *)buff, "%.1fs", 
-                float(time_us_64() - speed_log[0].moment) / 1000000.0
+                double(time_us_64() - speed_log[0].moment) / 1000000.0
             );
         }
         else if (drag_state == DRAG_DONE) {
             sprintf((char *)buff, "%.1fs", 
-                float(speed_log[speed_log_cursor].moment - speed_log[0].moment) / 1000000.0
+                double(speed_log[speed_log_cursor].moment - speed_log[0].moment) / 1000000.0
             );
         }
         else sprintf((char *)buff, "     ");
@@ -328,7 +339,7 @@ int main()
         display->setScrollPosition(0);
 
         log_gps_stats();
-        sleep_ms(300);
+        sleep_ms(100);
     }
 }
 
